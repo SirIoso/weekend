@@ -4,18 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weekend Generator</title>
+
 <style>
-  body { font-family: Arial, sans-serif; padding: 10px; }
-  input, button { padding: 8px; font-size: 16px; margin: 5px 0; }
-  table { border-collapse: collapse; width: 350px; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-  .no-weekend { background-color: #DAE9F8; }
+  body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+  }
+  input, button {
+    padding: 8px;
+    font-size: 16px;
+    margin: 5px 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 360px;
+    margin-top: 20px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+  }
+  .no-weekend {
+    background-color: #DAE9F8;
+  }
 </style>
 </head>
+
 <body>
 
 <h1>Weekend Roster Generator</h1>
-<label for="startDate">Select Start Date:</label>
+
+<label for="startDate">Select Start Date:</label><br>
 <input type="date" id="startDate">
 <button onclick="generateWeekends()">Generate Roster</button>
 
@@ -31,17 +51,20 @@
 
 <script>
 function generateWeekends() {
+
   const input = document.getElementById('startDate').value;
   if (!input) {
     alert('Please select a start date!');
     return;
   }
 
-  const [year, month, day] = input.split("-").map(Number);
+  // Parse yyyy-mm-dd safely
+  const [year, month, day] = input.split('-').map(Number);
   const inputDate = new Date(year, month - 1, day);
 
-  function getShortDayName(date) {
-    return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()];
+  if (isNaN(inputDate)) {
+    alert('Invalid date');
+    return;
   }
 
   function formatDate(date) {
@@ -51,10 +74,17 @@ function generateWeekends() {
     return `${d}-${m}-${y}`;
   }
 
-  // First Saturday on or after start date
+  /* ==============================
+     START ON NEAREST PREVIOUS SATURDAY
+     ============================== */
   const firstSaturday = new Date(inputDate);
-  firstSaturday.setDate(inputDate.getDate() + ((6 - inputDate.getDay() + 7) % 7));
+  firstSaturday.setDate(
+    inputDate.getDate() - ((inputDate.getDay() + 1) % 7)
+  );
 
+  /* ==============================
+     END DATE = 31 DEC OF NEXT YEAR
+     ============================== */
   const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
 
   const tableBody = document.querySelector('#weekendTable tbody');
@@ -64,24 +94,27 @@ function generateWeekends() {
   let weekendCounter = 0;
   let passedEndDate = false;
 
+  /* ==============================
+     MAIN LOOP
+     ============================== */
   while (true) {
-    const cyclePos = weekendCounter % 16;
-    const isWeekend = cyclePos < 12;
 
-    // Stop condition:
-    // After passing end-of-next-year AND completing current block
+    const cyclePos = weekendCounter % 16;
+    const isWeekend = cyclePos < 12; // 12 ON, 4 OFF
+
+    // Stop only AFTER finishing current block
     if (passedEndDate) {
-      if (isWeekend && cyclePos === 11) break;     // finish 12-week block
-      if (!isWeekend && cyclePos === 15) break;    // finish 4-week block
+      if (isWeekend && cyclePos === 11) break;   // finish 12-week block
+      if (!isWeekend && cyclePos === 15) break;  // finish 4-week block
     }
 
-    // Saturday
+    // ----- SATURDAY -----
     const satRow = tableBody.insertRow();
     satRow.insertCell(0).textContent = isWeekend ? "Sat" : "No Weekend";
     satRow.insertCell(1).textContent = formatDate(currentSaturday);
     if (!isWeekend) satRow.classList.add('no-weekend');
 
-    // Sunday
+    // ----- SUNDAY -----
     const sunday = new Date(currentSaturday);
     sunday.setDate(currentSaturday.getDate() + 1);
 
@@ -90,7 +123,7 @@ function generateWeekends() {
     sunRow.insertCell(1).textContent = formatDate(sunday);
     if (!isWeekend) sunRow.classList.add('no-weekend');
 
-    // Mark when we've crossed end-of-next-year
+    // Mark when end-of-next-year is passed
     if (currentSaturday > endOfNextYear) {
       passedEndDate = true;
     }
@@ -100,6 +133,6 @@ function generateWeekends() {
   }
 }
 </script>
-  
+
 </body>
 </html>
