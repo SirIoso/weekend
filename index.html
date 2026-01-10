@@ -29,14 +29,14 @@
     background-color: #DAE9F8;
   }
   .highlight-prev-sat {
-    background-color: #F2F2F2;
+    background-color: #DAE9F8;
   }
 </style>
 </head>
 
 <body>
 
-<h1>Weekend Roster Generator</h1>
+<h1>Weekend Generator</h1>
 
 <label for="startDate">Select Start Date:</label><br>
 <input type="date" id="startDate">
@@ -76,13 +76,13 @@ function generateWeekends() {
     return `${d}-${m}-${y}`;
   }
 
-  /* 🔹 Always start on nearest PREVIOUS Saturday */
+  /* Always start on nearest PREVIOUS Saturday */
   const firstSaturday = new Date(inputDate);
   firstSaturday.setDate(
     inputDate.getDate() - ((inputDate.getDay() + 1) % 7)
   );
 
-  /* 🔹 End date = 31 Dec of next year */
+  /* End date = 31 Dec of next year */
   const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
 
   const tableBody = document.querySelector('#weekendTable tbody');
@@ -106,12 +106,16 @@ function generateWeekends() {
 
     /* ----- SATURDAY ----- */
     const satRow = tableBody.insertRow();
-    satRow.insertCell(0).textContent = isWeekend ? "Sat" : "No Weekend";
+
+    const isPrevSaturday =
+      weekendCounter === 0 && highlightPrevSaturday;
+
+    satRow.insertCell(0).textContent =
+      isPrevSaturday ? "No Weekend" : (isWeekend ? "Sat" : "No Weekend");
+
     satRow.insertCell(1).textContent = formatDate(currentSaturday);
 
-    if (weekendCounter === 0 && highlightPrevSaturday) {
-      satRow.classList.add('highlight-prev-sat');
-    } else if (!isWeekend) {
+    if (isPrevSaturday || !isWeekend) {
       satRow.classList.add('no-weekend');
     }
 
