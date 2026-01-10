@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bonus Saver Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      padding: 5px;
+    }
+    .container {
+      max-width: 420px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input {
+      width: 95%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005ea6;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Bonus Saver Calculator</h1>
+
+    <label for="startDate">Start Date</label>
+    <input type="date" id="startDate">
+
+    <label for="endDate">End Date</label>
+    <input type="date" id="endDate">
+
+    <label for="shares">Number of Shares</label>
+    <input type="number" id="shares" min="1" placeholder="Enter number of shares">
+
+    <button onclick="calculate()">Calculate</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    function formatNumber(num) {
+      return num.toLocaleString("en-US");
+    }
+
+    function calculate() {
+      const startInput = document.getElementById("startDate").value;
+      const endInput = document.getElementById("endDate").value;
+      const sharesInput = document.getElementById("shares").value;
+      const resultDiv = document.getElementById("result");
+
+      if (!startInput || !endInput || !sharesInput) {
+        resultDiv.textContent = "Please fill in all fields.";
+        return;
+      }
+
+      let startDate = new Date(startInput);
+      let endDate = new Date(endInput);
+      let shares = Number(sharesInput);
+
+      if (startDate > endDate) {
+        resultDiv.textContent = "Start date must be before end date.";
+        return;
+      }
+
+      let fridayCount = 0;
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        if (currentDate.getDay() === 5) { // Friday
+          fridayCount++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      let perFridayValue = shares * 25;
+      let total = fridayCount * perFridayValue;
+
+      resultDiv.innerHTML = `
+        Fridays: ${formatNumber(fridayCount)}<br>
+        Shares × 25: ${formatNumber(perFridayValue)}<br>
+        <strong>Total: ${formatNumber(total)}</strong>
+      `;
+    }
+  </script>
+
+</body>
+</html>
