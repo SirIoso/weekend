@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekend Generator</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  input, button { padding: 8px; font-size: 16px; margin: 5px 0; }
+  table { border-collapse: collapse; width: 350px; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  .no-weekend { background-color: #DAE9F8; }
+</style>
+</head>
+<body>
+
+<h1>Weekend Roster Generator</h1>
+<label for="startDate">Select Start Date:</label>
+<input type="date" id="startDate">
+<button onclick="generateWeekends()">Generate Weekends</button>
+
+<table id="weekendTable">
+  <thead>
+    <tr>
+      <th>Day</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+function generateWeekends() {
+  const input = document.getElementById('startDate').value;
+  if (!input) {
+    alert('Please select a start date!');
+    return;
+  }
+
+  const [year, month, day] = input.split("-").map(Number);
+  const inputDate = new Date(year, month - 1, day);
+
+  function getShortDayName(date) {
+    return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()];
+  }
+
+  function formatDate(date) {
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][date.getMonth()];
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+  }
+
+  // First Saturday on or after start date
+  const firstSaturday = new Date(inputDate);
+  firstSaturday.setDate(inputDate.getDate() + ((6 - inputDate.getDay() + 7) % 7));
+
+  const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
+
+  const tableBody = document.querySelector('#weekendTable tbody');
+  tableBody.innerHTML = '';
+
+  let currentSaturday = new Date(firstSaturday);
+  let weekendCounter = 0;
+  let passedEndDate = false;
+
+  while (true) {
+    const cyclePos = weekendCounter % 16;
+    const isWeekend = cyclePos < 12;
+
+    // Stop condition:
+    // After passing end-of-next-year AND completing current block
+    if (passedEndDate) {
+      if (isWeekend && cyclePos === 11) break;     // finish 12-week block
+      if (!isWeekend && cyclePos === 15) break;    // finish 4-week block
+    }
+
+    // Saturday
+    const satRow = tableBody.insertRow();
+    satRow.insertCell(0).textContent = isWeekend ? "Sat" : "No Weekend";
+    satRow.insertCell(1).textContent = formatDate(currentSaturday);
+    if (!isWeekend) satRow.classList.add('no-weekend');
+
+    // Sunday
+    const sunday = new Date(currentSaturday);
+    sunday.setDate(currentSaturday.getDate() + 1);
+
+    const sunRow = tableBody.insertRow();
+    sunRow.insertCell(0).textContent = isWeekend ? "Sun" : "No Weekend";
+    sunRow.insertCell(1).textContent = formatDate(sunday);
+    if (!isWeekend) sunRow.classList.add('no-weekend');
+
+    // Mark when we've crossed end-of-next-year
+    if (currentSaturday > endOfNextYear) {
+      passedEndDate = true;
+    }
+
+    currentSaturday.setDate(currentSaturday.getDate() + 7);
+    weekendCounter++;
+  }
+}
+</script>
+
+</body>
+</html>
