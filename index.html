@@ -75,7 +75,7 @@ function generateWeekends() {
   const tableBody = document.querySelector('#weekendTable tbody');
   tableBody.innerHTML = '';
 
-  // Determine first Saturday and first Sunday **on or after input date**
+  // Determine first Saturday and first Sunday on or after input date
   let firstSaturday = new Date(inputDate);
   if (inputDate.getDay() !== 6) { // Not Saturday
     firstSaturday.setDate(inputDate.getDate() + ((6 - inputDate.getDay() + 7) % 7));
@@ -86,50 +86,66 @@ function generateWeekends() {
     firstSunday.setDate(inputDate.getDate() + ((7 - inputDate.getDay()) % 7));
   }
 
-  // Generate 12 Saturdays and 12 Sundays
+  const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
+
   let saturdays = [];
   let sundays = [];
-  for (let i = 0; i < 12; i++) {
-    let sat = new Date(firstSaturday);
-    sat.setDate(firstSaturday.getDate() + i * 7);
-    saturdays.push(sat);
 
-    let sun = new Date(firstSunday);
-    sun.setDate(firstSunday.getDate() + i * 7);
-    sundays.push(sun);
+  let satPointer = new Date(firstSaturday);
+  let sunPointer = new Date(firstSunday);
+
+  let cycleIndex = 0; // 0..23 → 12 normal, 12 no-weekend
+
+  while (true) {
+    const isNoWeekend = cycleIndex >= 12;
+
+    // Add Saturday
+    saturdays.push({ date: new Date(satPointer), noWeekend: isNoWeekend });
+    satPointer.setDate(satPointer.getDate() + 7);
+
+    // Add Sunday
+    sundays.push({ date: new Date(sunPointer), noWeekend: isNoWeekend });
+    sunPointer.setDate(sunPointer.getDate() + 7);
+
+    cycleIndex++;
+    if (cycleIndex === 24) cycleIndex = 0; // repeat cycle
+
+    // Stop condition: check if we've passed the end of next year
+    if (satPointer > endOfNextYear && sunPointer > endOfNextYear) {
+      // Check if cycle is complete
+      const currentCycle = (cycleIndex <= 12) ? "normal" : "noWeekend";
+      if (currentCycle === "normal") {
+        // Complete remaining normal weekends to reach 12 weeks
+        while (cycleIndex < 12) {
+          saturdays.push({ date: new Date(satPointer), noWeekend: false });
+          satPointer.setDate(satPointer.getDate() + 7);
+
+          sundays.push({ date: new Date(sunPointer), noWeekend: false });
+          sunPointer.setDate(sunPointer.getDate() + 7);
+
+          cycleIndex++;
+        }
+      } else {
+        // Complete remaining no-weekend weekends to reach 12 weeks
+        while (cycleIndex < 24) {
+          saturdays.push({ date: new Date(satPointer), noWeekend: true });
+          satPointer.setDate(satPointer.getDate() + 7);
+
+          sundays.push({ date: new Date(sunPointer), noWeekend: true });
+          sunPointer.setDate(sunPointer.getDate() + 7);
+
+          cycleIndex++;
+        }
+      }
+      break;
+    }
   }
 
-  // Generate 4 extra Saturdays and Sundays as "No Weekend"
-  let lastSat = new Date(saturdays[saturdays.length - 1]);
-  let lastSun = new Date(sundays[sundays.length - 1]);
-  for (let i = 1; i <= 4; i++) {
-    let sat = new Date(lastSat);
-    sat.setDate(lastSat.getDate() + i * 7);
-    saturdays.push(sat);
-
-    let sun = new Date(lastSun);
-    sun.setDate(lastSun.getDate() + i * 7);
-    sundays.push(sun);
-  }
-
-  // Combine all dates
+  // Combine and sort chronologically
   let allDates = [];
-  saturdays.forEach((d, idx) => {
-    allDates.push({
-      day: idx < 12 ? "Sat" : "No Weekend",
-      date: d,
-      noWeekend: idx >= 12
-    });
-  });
-  sundays.forEach((d, idx) => {
-    allDates.push({
-      day: idx < 12 ? "Sun" : "No Weekend",
-      date: d,
-      noWeekend: idx >= 12
-    });
-  });
+  saturdays.forEach(d => allDates.push({ day: d.noWeekend ? "No Weekend" : "Sat", date: d.date, noWeekend: d.noWeekend }));
+  sundays.forEach(d => allDates.push({ day: d.noWeekend ? "No Weekend" : "Sun", date: d.date, noWeekend: d.noWeekend }));
 
-  // Sort chronologically
   allDates.sort((a, b) => a.date - b.date);
 
   // Build table
