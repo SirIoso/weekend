@@ -26,10 +26,10 @@
     text-align: center;
   }
   .no-weekend {
-    background-color: #DAE9F8;
+    background-color: #FBE2D5; /* Previous Saturday & last Sunday of 12 weeks */
   }
-  .highlight-prev-sat {
-    background-color: #DAE9F8;
+  .extra-week {
+    background-color: #DAE9F8; /* 4 extra weeks */
   }
 </style>
 </head>
@@ -54,7 +54,6 @@
 
 <script>
 function generateWeekends() {
-
   const input = document.getElementById('startDate').value;
   if (!input) {
     alert('Please select a start date!');
@@ -76,68 +75,92 @@ function generateWeekends() {
     return `${d}-${m}-${y}`;
   }
 
-  /* Always start on nearest PREVIOUS Saturday */
-  const firstSaturday = new Date(inputDate);
-  firstSaturday.setDate(
-    inputDate.getDate() - ((inputDate.getDay() + 1) % 7)
-  );
-
-  /* End date = 31 Dec of next year */
-  const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
-
   const tableBody = document.querySelector('#weekendTable tbody');
   tableBody.innerHTML = '';
 
-  let currentSaturday = new Date(firstSaturday);
-  let weekendCounter = 0;
-  let passedEndDate = false;
+  const weekends = [];
 
-  const highlightPrevSaturday = inputDate.getDay() === 0; // Sunday only
+  let currentSaturday, currentSunday;
+  let firstCycle = true;
 
-  while (true) {
+  // Previous Saturday if input is Sunday
+  if (inputDate.getDay() === 0) {
+    const prevSat = new Date(inputDate);
+    prevSat.setDate(inputDate.getDate() - 1);
+    weekends.push({ day: "No Weekend", date: prevSat, highlight: true });
 
-    const cyclePos = weekendCounter % 16;
-    const isWeekend = cyclePos < 12;
+    currentSaturday = new Date(inputDate);
+    currentSaturday.setDate(inputDate.getDate() + 6);
+    currentSunday = new Date(currentSaturday);
+    currentSunday.setDate(currentSaturday.getDate() + 1);
 
-    if (passedEndDate) {
-      if (isWeekend && cyclePos === 11) break;
-      if (!isWeekend && cyclePos === 15) break;
-    }
+  } else if (inputDate.getDay() === 6) {
+    currentSaturday = new Date(inputDate);
+    currentSunday = new Date(currentSaturday);
+    currentSunday.setDate(currentSaturday.getDate() + 1);
 
-    /* ----- SATURDAY ----- */
-    const satRow = tableBody.insertRow();
-
-    const isPrevSaturday =
-      weekendCounter === 0 && highlightPrevSaturday;
-
-    satRow.insertCell(0).textContent =
-      isPrevSaturday ? "No Weekend" : (isWeekend ? "Sat" : "No Weekend");
-
-    satRow.insertCell(1).textContent = formatDate(currentSaturday);
-
-    if (isPrevSaturday || !isWeekend) {
-      satRow.classList.add('no-weekend');
-    }
-
-    /* ----- SUNDAY ----- */
-    const sunday = new Date(currentSaturday);
-    sunday.setDate(currentSaturday.getDate() + 1);
-
-    const sunRow = tableBody.insertRow();
-    sunRow.insertCell(0).textContent = isWeekend ? "Sun" : "No Weekend";
-    sunRow.insertCell(1).textContent = formatDate(sunday);
-
-    if (!isWeekend) {
-      sunRow.classList.add('no-weekend');
-    }
-
-    if (currentSaturday > endOfNextYear) {
-      passedEndDate = true;
-    }
-
-    currentSaturday.setDate(currentSaturday.getDate() + 7);
-    weekendCounter++;
+  } else {
+    currentSaturday = new Date(inputDate);
+    currentSaturday.setDate(inputDate.getDate() - ((inputDate.getDay() + 1) % 7));
+    currentSunday = new Date(currentSaturday);
+    currentSunday.setDate(currentSaturday.getDate() + 1);
   }
+
+  // Add 12-week pairs
+  for (let i = 0; i < 12; i++) {
+    const sat = new Date(currentSaturday);
+    sat.setDate(currentSaturday.getDate() + i * 7);
+    const sun = new Date(currentSunday);
+    sun.setDate(currentSunday.getDate() + i * 7);
+
+    weekends.push({ day: "Sat", date: sat, highlight: false });
+    weekends.push({ day: "Sun", date: sun, highlight: false });
+  }
+
+  // Only mark the last Sunday of the 12-week pair if input is Sunday
+  if (inputDate.getDay() === 0) {
+    const lastSundayIndex = weekends.length - 1;
+    weekends[lastSundayIndex] = {
+      day: "No Weekend",
+      date: weekends[lastSundayIndex].date,
+      highlight: true
+    };
+  }
+
+  // Add 4 extra weeks after the last 12-week pair
+  const lastDate = weekends[weekends.length - 1].date;
+  let extraSaturday = new Date(lastDate);
+  let extraSunday = new Date(lastDate);
+
+  if (extraSaturday.getDay() === 6) {
+    extraSaturday.setDate(extraSaturday.getDate() + 7);
+    extraSunday.setDate(extraSaturday.getDate() + 1);
+  } else if (extraSaturday.getDay() === 0) {
+    extraSaturday.setDate(extraSaturday.getDate() + 6);
+    extraSunday.setDate(extraSaturday.getDate() + 1);
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const sat = new Date(extraSaturday);
+    sat.setDate(extraSaturday.getDate() + i * 7);
+    const sun = new Date(extraSunday);
+    sun.setDate(extraSunday.getDate() + i * 7);
+
+    weekends.push({ day: "No Weekend", date: sat, extra: true });
+    weekends.push({ day: "No Weekend", date: sun, extra: true });
+  }
+
+  // Sort chronologically
+  weekends.sort((a, b) => a.date - b.date);
+
+  // Build table
+  weekends.forEach(item => {
+    const row = tableBody.insertRow();
+    row.insertCell(0).textContent = item.day;
+    row.insertCell(1).textContent = formatDate(item.date);
+    if (item.highlight) row.classList.add('no-weekend'); // #FBE2D5
+    if (item.extra) row.classList.add('extra-week');      // #DAE9F8
+  });
 }
 </script>
 
