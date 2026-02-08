@@ -86,7 +86,8 @@ function generateWeekends() {
     firstSunday.setDate(inputDate.getDate() + ((7 - inputDate.getDay()) % 7));
   }
 
-  const endOfNextYear = new Date(inputDate.getFullYear() + 1, 11, 31);
+  // End of the next 2 years (relative to the input year)
+  const endOfNextTwoYears = new Date(inputDate.getFullYear() + 2, 11, 31);
 
   let saturdays = [];
   let sundays = [];
@@ -110,8 +111,8 @@ function generateWeekends() {
     cycleIndex++;
     if (cycleIndex === 24) cycleIndex = 0; // repeat cycle
 
-    // Stop condition: check if we've passed the end of next year
-    if (satPointer > endOfNextYear && sunPointer > endOfNextYear) {
+    // Stop condition: check if we've passed the end of the next 2 years
+    if (satPointer > endOfNextTwoYears && sunPointer > endOfNextTwoYears) {
       // Check if cycle is complete
       const currentCycle = (cycleIndex <= 12) ? "normal" : "noWeekend";
       if (currentCycle === "normal") {
